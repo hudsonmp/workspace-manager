@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace Manager</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 40px; max-width: 720px; margin: 0 auto; line-height: 1.6; }
+  h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; color: #fff; }
+  .subtitle { color: #888; margin-bottom: 40px; font-size: 14px; }
+  .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .card p { color: #aaa; font-size: 14px; }
+  kbd { background: #222; border: 1px solid #444; border-radius: 5px; padding: 2px 8px; font-family: 'SF Mono', monospace; font-size: 13px; color: #fff; white-space: nowrap; }
+  .step { display: flex; gap: 16px; margin: 12px 0; }
+  .step-num { background: #2563eb; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-text { font-size: 14px; color: #ccc; }
+  .setup { background: #1a1a0a; border-color: #3a3a1a; }
+  .setup h2 { color: #eab308; }
+  .status { display: flex; gap: 12px; margin-top: 16px; }
+  .status-item { flex: 1; background: #111; border-radius: 8px; padding: 12px; text-align: center; }
+  .status-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-value { font-size: 14px; color: #fff; margin-top: 4px; font-family: 'SF Mono', monospace; }
+  .status-value.ok { color: #22c55e; }
+  .status-value.err { color: #ef4444; }
+  code { background: #1e1e1e; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono', monospace; font-size: 13px; }
+  .api-section { margin-top: 12px; }
+  .api-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; font-size: 13px; }
+  .api-method { font-family: 'SF Mono', monospace; font-weight: 600; }
+  .api-method.post { color: #22c55e; }
+  .api-method.get { color: #3b82f6; }
+  .api-method.put { color: #eab308; }
+  .api-method.del { color: #ef4444; }
+  .api-path { font-family: 'SF Mono', monospace; color: #aaa; }
+  .api-desc { color: #666; }
+</style>
+</head>
+<body>
+
+<h1>Workspace Manager</h1>
+<p class="subtitle">Shelve, name, and restore Chrome workspaces across macOS Spaces</p>
+
+<div id="live-status" class="card">
+  <h2>Live Status</h2>
+  <div class="status">
+    <div class="status-item">
+      <div class="status-label">Backend</div>
+      <div class="status-value" id="backend-status">checking...</div>
+    </div>
+    <div class="status-item">
+      <div class="status-label">Bundles Shelved</div>
+      <div class="status-value" id="bundle-count">—</div>
+    </div>
+    <div class="status-item">
+      <div class="status-label">Active Space</div>
+      <div class="status-value" id="active-space">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Shelve a Window</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text">Open Chrome with tabs you want to save</div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text">Press <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd> from anywhere</div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text">All tabs are saved with an ML-generated name. Window closes.</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Restore a Session</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text">Click <strong>⌂</strong> in your menu bar</div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text">Hover <strong>Shelved Sessions</strong></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text">Click any bundle — tabs reopen in a new window</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Name Your Spaces</h2>
+  <p>Click <strong>⌂</strong> → <strong>Rename This Space</strong>. The name shows in the menu bar and persists across switches.</p>
+</div>
+
+<div class="card setup">
+  <h2>Setup Required</h2>
+  <p>Grant Accessibility access for the global hotkey:</p>
+  <div class="step">
+    <div class="step-num">!</div>
+    <div class="step-text"><strong>System Settings → Privacy &amp; Security → Accessibility</strong><br>
+    Add: <code>~/workspace-manager/.venv/bin/python3</code></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>API Reference</h2>
+  <p style="margin-bottom: 12px;">Backend runs at <code>localhost:8001</code></p>
+  <div class="api-section">
+    <div class="api-row">
+      <span><span class="api-method post">POST</span> <span class="api-path">/shelve</span></span>
+      <span class="api-desc">Save tabs as a bundle</span>
+    </div>
+    <div class="api-row">
+      <span><span class="api-method get">GET</span> <span class="api-path">/bundles</span></span>
+      <span class="api-desc">List all shelved bundles</span>
+    </div>
+    <div class="api-row">
+      <span><span class="api-method post">POST</span> <span class="api-path">/restore/{id}</span></span>
+      <span class="api-desc">Restore a bundle</span>
+    </div>
+    <div class="api-row">
+      <span><span class="api-method del">DEL</span> <span class="api-path">/bundles/{id}</span></span>
+      <span class="api-desc">Delete a bundle</span>
+    </div>
+    <div class="api-row">
+      <span><span class="api-method get">GET</span> <span class="api-path">/active-space</span></span>
+      <span class="api-desc">Current Space name</span>
+    </div>
+    <div class="api-row">
+      <span><span class="api-method put">PUT</span> <span class="api-path">/spaces/{idx}/name</span></span>
+      <span class="api-desc">Rename a Space</span>
+    </div>
+    <div class="api-row">
+      <span><span class="api-method post">POST</span> <span class="api-path">/suggest-name</span></span>
+      <span class="api-desc">ML name suggestion</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Architecture</h2>
+  <p>Two processes, no Chrome extension. The menu bar app captures <kbd>Cmd+Shift+K</kbd> globally via NSEvent, reads Chrome tabs via AppleScript, and sends them to a local FastAPI backend. Naming uses TF-IDF keyword extraction + domain grouping. All data in local SQLite.</p>
+</div>
+
+<script>
+async function checkStatus() {
+  const backendEl = document.getElementById('backend-status');
+  const bundleEl = document.getElementById('bundle-count');
+  const spaceEl = document.getElementById('active-space');
+
+  try {
+    const health = await fetch('http://localhost:8001/health');
+    if (health.ok) {
+      backendEl.textContent = 'online';
+      backendEl.className = 'status-value ok';
+    } else {
+      backendEl.textContent = 'error';
+      backendEl.className = 'status-value err';
+    }
+  } catch {
+    backendEl.textContent = 'offline';
+    backendEl.className = 'status-value err';
+  }
+
+  try {
+    const bundles = await fetch('http://localhost:8001/bundles');
+    if (bundles.ok) {
+      const data = await bundles.json();
+      bundleEl.textContent = data.length;
+    }
+  } catch {}
+
+  try {
+    const space = await fetch('http://localhost:8001/active-space');
+    if (space.ok) {
+      const data = await space.json();
+      spaceEl.textContent = data.name || '—';
+    }
+  } catch {}
+}
+
+checkStatus();
+setInterval(checkStatus, 5000);
+</script>
+
+</body>
+</html>
